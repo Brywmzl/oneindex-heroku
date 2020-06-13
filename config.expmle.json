@@ -1,0 +1,22 @@
+[
+  {
+    "MSAccount": false,
+    "MainLand": false,
+    "RefreshToken": "<token1>",
+    "SubPath": "/",
+    "RootPath": "/",
+    "HidePath": "",
+    "AuthPath": "",
+    "RefreshInterval": 900
+  },
+  {
+    "MSAccount": false,
+    "MainLand": false,
+    "RefreshToken": "<token2>",
+    "SubPath": "/movie",
+    "RootPath": "/",
+    "HidePath": "",
+    "AuthPath": "/movie?username:passwd",
+    "RefreshInterval": 900
+  }
+]
