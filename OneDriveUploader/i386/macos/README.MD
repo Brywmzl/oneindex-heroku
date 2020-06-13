@@ -1,2 +1,0 @@
-# OneDriveUploader
-## MacOS i386
