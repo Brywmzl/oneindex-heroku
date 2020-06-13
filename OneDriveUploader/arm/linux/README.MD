@@ -1,3 +1,0 @@
-# OneDriveUploader
-## Linux ARM
-

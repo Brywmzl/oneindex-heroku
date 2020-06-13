@@ -1,2 +1,0 @@
-# OneDriveUploader
-## Windows i386
