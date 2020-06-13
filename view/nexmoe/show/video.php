@@ -1,35 +1,64 @@
-<?php view::layout('layout')?>
 <?php
 $item['thumb'] = onedrive::thumbnail($item['path']);
+$downloadUrl = $item['downloadUrl'];
+ 	if (config('proxy_domain') != ""){
+ 	$downloadUrl = str_replace(config('main_domain'),config('proxy_domain'),$item['downloadUrl']);
+ 	}else {
+ 		$downloadUrl = $item['downloadUrl'];
+ 	}
 ?>
-<?php view::begin('content');?>
-<link class="dplayer-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css">
-<script src="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js"></script>
+
+
+<link class="dplayer-css" rel="stylesheet" href="//cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css">
+<script src="//cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/flv.js/dist/flv.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/hls.js/dist/hls.min.js"></script>
+
+
 <div class="mdui-container-fluid">
 	<div class="nexmoe-item">
 	<div class="mdui-center" id="dplayer"></div>
 	
-	<!-- 固定标签 -->
-	<div class="mdui-textfield">
-	  <label class="mdui-textfield-label">下载地址</label>
-	  <input class="mdui-textfield-input" type="text" value="<?php e($url);?>"/>
-	</div>
-	<div class="mdui-textfield">
-	  <label class="mdui-textfield-label">引用地址</label>
-	  <textarea class="mdui-textfield-input"><video><source src="<?php e($url);?>" type="video/mp4"></video></textarea>
-	</div>
+
+	<script type="text/javascript">
+	    window.onload = function() {
+	        var sel = document.getElementById("sel");
+	        if(sel && sel.addEventListener){
+	            sel.addEventListener('change',function(e){
+	                var ev = e||window.event;
+	                var target = ev.target||ev.srcElement;
+	                document.getElementById("val").value = target.value;
+	            },false)
+	        }
+	    }
+	</script>
 	</div>
 </div>
 <script>
+if(window.location.href.indexOf(".m3u8") > 0){          
+    var type = 'customHls';}
+else if(window.location.href.indexOf(".flv") > 0){  
+    var type = 'flv';}
+else {
+    var type = 'normal'; //MP4格式P2P兼容性不好，不调用P2P。
+}
+
 const dp = new DPlayer({
 	container: document.getElementById('dplayer'),
 	lang:'zh-cn',
 	video: {
-	    url: '<?php e($item['downloadUrl']);?>',
+	    url: '<?php e($downloadUrl);?>',
 	    pic: '<?php @e($item['thumb']);?>',
-	    type: '<?php e((pathinfo($item["name"], PATHINFO_EXTENSION) === 'flv') ? 'flv' : 'auto'); ?>'
+	    
+	    type: type,
+	    customType: {
+            customHls: function(video, player) {
+                const hls = new Hls();
+                hls.loadSource(video.src);
+                hls.attachMedia(video);
+            },
+        },
 	}
 });
 </script>
-<a href="<?php e($url);?>" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
-<?php view::end('content');?>
+

@@ -2,25 +2,29 @@
 define('VIEW_PATH', ROOT.'view/admin/');
 class AdminController{
 	static $default_config = array(
-	  'site_name' =>'OneIndex',
+	  'site_name' => 'OneIndex',
+	  'title_name' => 'Index of /',
 	  'password' => 'oneindex',
-	  'style'=>'material',
+	  'drawer' => '<br>',
+	  'drawer_img' => 'https://image.suning.cn/uimg/ZR/share_order/158562116951626812.jpg',
+	  'style'=>'nexmoe',
 	  'onedrive_root' =>'',
 	  'cache_type'=>'secache',
 	  'cache_expire_time' => 3600,
 	  'cache_refresh_time' => 600,
+	  'page_item' => 50,
 	  'root_path' => '?',
 	  'show'=> array (
 	  	'stream'=>['txt'],
-	    'image' => ['bmp','jpg','jpeg','png','gif'],
-	    'video5'=>['mp4','webm','mkv'],
-	    'video'=>[],
-	    'video2'=>['avi','mpg', 'mpeg', 'rm', 'rmvb', 'mov', 'wmv', 'asf', 'ts', 'flv'],
-	    'audio'=>['ogg','mp3','wav'],
+	    'image' => ['bmp','jpg','jpeg','png','gif','webp'],
+	    'video5'=>[],
+	    'video'=>['mpg','mpeg','mov','flv','mp4','webm','mkv','m3u8'],
+	    'video2'=>['avi','rm','rmvb','wmv','asf', 'ts'],
+	    'audio'=>['ogg','mp3','wav','flac','aac','m4a','ape'],
 	    'code'=>['html','htm','php', 'css', 'go','java','js','json','txt','sh','md'],
 	    'doc'=>['csv','doc','docx','odp','ods','odt','pot','potm','potx','pps','ppsx','ppsxm','ppt','pptm','pptx','rtf','xls','xlsx']
 	  ),
-	  'images'=>['home'=>false,'public'=>false, 'exts'=>['jpg','png','gif','bmp']]
+	  'images'=>['home'=>false,'public'=>false, 'exts'=>['jpg','png','gif','bmp']],
 	);
 	
 	function __construct(){
@@ -40,51 +44,29 @@ class AdminController{
 	}
 
 	function settings(){
-		$message = false;
-
+		
 		if($_POST){
-			
-			if ($this->cache_exists($_POST['cache_type'])) {
-				$message = '保存成功';
-				config('cache_type', $_POST['cache_type']);
-			} else {
-				$message = '缓存类型不可用，请确认已经安装了该拓展。';
-				config('cache_type', 'secache');
-			}
 
-			config('site_name', $_POST['site_name']);
-			config('style', $_POST['style']);
-			config('onedrive_root', get_absolute_path($_POST['onedrive_root']));
-			config('onedrive_hide', $_POST['onedrive_hide']);
-			config('onedrive_hotlink', $_POST['onedrive_hotlink']);
-			config('cache_expire_time', intval($_POST['cache_expire_time']));
+			config('site_name',$_POST['site_name']);
+			config('title_name',$_POST['title_name']);
+			config('drawer',$_POST['drawer']);
+			config('drawer_img',$_POST['drawer_img']);
+			config('style',$_POST['style']);
+			config('main_domain',$_POST['main_domain']);
+			config('proxy_domain',$_POST['proxy_domain']);
+			config('onedrive_root',get_absolute_path($_POST['onedrive_root']));
+
+			config('onedrive_hide',$_POST['onedrive_hide']);
+
+			config('cache_type',$_POST['cache_type']);
+			config('cache_expire_time',intval($_POST['cache_expire_time']));
+			config('page_item',intval($_POST['page_item']));
+
 			$_POST['root_path'] = empty($_POST['root_path'])?'?':'';
-			config('root_path', $_POST['root_path']);
+			config('root_path',$_POST['root_path']);
 		}
-
 		$config = config('@base');
-
-		return view::load('settings')->with('config', $config)->with('message', $message);
-	}
-
-	/**
-	 * 判断缓存类型
-	 *
-	 * @param string $cache_type 缓存类型
-	 * @return void
-	 */
-	function cache_exists($cache_type){
-		// 需要判断环境的缓存类型
-		$_cache_type = [
-			'redis',
-			'memcache',
-		];
-
-		if (in_array($cache_type, $_cache_type)) {
-			return class_exists(ucfirst($cache_type));
-		}
-
-		return true;
+		return view::load('settings')->with('config', $config);
 	}
 
 	function cache(){
@@ -177,18 +159,24 @@ class AdminController{
 			config('client_secret',$_POST['client_secret']);
 			config('client_id',$_POST['client_id']);
 			config('redirect_uri',$_POST['redirect_uri']);
+			if($_POST['type'] == '2'){
+				config('oauth_url','https://login.partner.microsoftonline.cn/common/oauth2/v2.0');
+				config('api_url','https://microsoftgraph.chinacloudapi.cn/v1.0');}
+			else {
+				config('oauth_url','https://login.microsoftonline.com/common/oauth2/v2.0');
+				config('api_url','https://graph.microsoft.com/v1.0');
+			};
 			return view::direct('?step=2');
 		}
 		if($_SERVER['HTTP_HOST'] == 'localhost'){
 			$redirect_uri = 'http://'.$_SERVER['HTTP_HOST'].get_absolute_path(dirname($_SERVER['PHP_SELF']));
 		}else{
-			// 非https,调用ju.tn中转
-			$redirect_uri = 'https://oneindex.github.io/';
+ 			// 调用 https://moeclub.org/onedrive-login 中转
+ 			$redirect_uri = 'https://moeclub.org/onedrive-login';
 		}
 		
-		$ru = "https://developer.microsoft.com/en-us/graph/quick-start?appID=_appId_&appName=_appName_&redirectUrl={$redirect_uri}&platform=option-php";
-		$deepLink = "/quickstart/graphIO?publicClientSupport=false&appName=oneindex&redirectUrl={$redirect_uri}&allowImplicitFlow=false&ru=".urlencode($ru);
-		$app_url = "https://apps.dev.microsoft.com/?deepLink=".urlencode($deepLink);
+ 		//$oauth_url = 'https://login.microsoftonline.com/common/oauth2/authorize';
+ 		//$app_url = "{$oauth_url}?response_type=code&client_id={$client_id}&redirect_uri={$redirect_uri}";
 		return view::load('install/install_1')->with('title','系统安装')
 						->with('redirect_uri', $redirect_uri)
 						->with('app_url', $app_url);

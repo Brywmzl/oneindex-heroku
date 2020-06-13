@@ -54,11 +54,7 @@
 			if($token['expires_on'] > time()+600){
 				return $token['access_token'];
 			}else{
-            			if (empty($token) || empty($token['refresh_token'])) {
-                			$refresh_token = config('refresh_token');
-            			} else {
-                			$refresh_token = $token['refresh_token'];
-            			}
+				$refresh_token = config('refresh_token');
 				$token = self::get_token($refresh_token);
 				if(!empty($token['refresh_token'])){
 					$token['expires_on'] = time()+ $token['expires_in'];
@@ -91,8 +87,7 @@
 			if(is_array($hide_list) && count($hide_list)>0){
 				foreach($hide_list as $hide_dir){
 					foreach($items as $key=>$_array){
-						$buf = trim($hide_dir);
-						if($buf && stristr($key, $buf))unset($items[$key]);
+						if(!empty(trim($hide_dir)) && stristr($key,trim($hide_dir)))unset($items[$key]);
 					}
 				}
 			}
@@ -143,15 +138,6 @@
 			$data = json_decode($resp->content, true);
 			$request = self::request($path,"thumbnails/0?select={$size}");
 			return @$data[$size]['url'];
-		}
-
-		static function share($path){
-			$request = self::request($path,"createLink");
-			$post_data['type'] = 'view';
-			$post_data['scope'] = 'anonymous';
-			$resp = fetch::post($request, json_encode($post_data));
-			$data = json_decode($resp->content, true);
-			return $data;
 		}
 
 		//文件上传函数

@@ -2,8 +2,8 @@
 
 	!defined('CACHE_PATH') && define('CACHE_PATH', sys_get_temp_dir().'/');
 	class cache{
-		// 驱动方式（支持filecache/memcache/secache）
-		static $type = 'secache';
+		// 驱动方式（支持filecache/memcache/secache/redis）
+		static $type = 'filecache';
 
 		// 返回缓存实例
     	protected static function c(){

@@ -7,12 +7,24 @@ class IndexController{
 	private $time;
 
 	function __construct(){
+ 		//分页页数
+ 		$this->z_page = config('page_item');
+       
 		//获取路径和文件名
 		$paths = explode('/', rawurldecode($_GET['path']));
 		if(substr($_SERVER['REQUEST_URI'], -1) != '/'){
 			$this->name = array_pop($paths);
 		}
-		$this->url_path = get_absolute_path(join('/', $paths));
+
+ 		preg_match_all("(\.page\-([0-9]*)/$)",get_absolute_path(join('/', $paths)),$mat);
+ 		if(empty($mat[1][0])){
+ 			$this->page = 1;
+ 		} else {
+ 			$this->page = $mat[1][0];
+ 		}
+         
+ 		$this->url_path = preg_replace("(\.page\-[0-9]*/$)","",get_absolute_path(join('/', $paths)));
+
 		$this->path = get_absolute_path(config('onedrive_root').$this->url_path);
 		//获取文件夹下所有元素
 		$this->items = $this->items($this->path);
@@ -76,7 +88,11 @@ class IndexController{
 		}elseif($_SERVER['REQUEST_METHOD'] == 'POST' || !is_null($_GET['s']) ){
 			return $this->show($item);
 		}else{//返回下载链接
-			$url = $item['downloadUrl'];
+			if (config('proxy_domain') != ""){
+			$url = str_replace(config('main_domain'),config('proxy_domain'),$item['downloadUrl']);
+			}else {
+				$url = $item['downloadUrl'];
+			}
 		}
 		header('Location: '.$url);
 	}
@@ -113,13 +129,21 @@ class IndexController{
 			//不在列表中展示
 			unset($this->items['HEAD.md']);
 		}
-		return view::load('list')->with('title', 'index of '. urldecode($this->url_path))
+
+		$this->totalpage = ceil(count($this->items) / $this->z_page);
+
+		if($this->page*$this->z_page >= count($this->items))
+		$this->page = $this->totalpage;
+
+		return view::load('list')->with('title', config('title_name'))
 					->with('navs', $navs)
-					->with('path',join("/", array_map("rawurlencode", explode("/", $this->url_path)))  )
+					->with('path',join("/", array_map("rawurlencode", explode("/", $this->url_path))))
 					->with('root', $root)
-					->with('items', $this->items)
+					->with('items', array_slice($this->items,$this->z_page*($this->page-1),$this->z_page))
 					->with('head',$head)
-					->with('readme',$readme);
+					->with('readme',$readme)
+ 					->with('page',$this->page)
+ 					->with('totalpage',$this->totalpage);
 	}
 
 	function show($item){
@@ -137,7 +161,10 @@ class IndexController{
 
 		$show = config('show');
 		foreach($show as $n=>$exts){
-			if(in_array($ext,$exts)){
+			if ($ext == 'pdf'){
+				return view::load('show/pdf')->with($data);
+			}
+			elseif(in_array($ext,$exts)){
 				return view::load('show/'.$n)->with($data);
 			}
 		}
@@ -192,7 +219,7 @@ class IndexController{
 		return $content;
 	}
 
-	//时候404
+	//404
 	function is404(){
 		if(!empty($this->items[$this->name]) || (empty($this->name) && is_array($this->items)) ){
 			return false;
